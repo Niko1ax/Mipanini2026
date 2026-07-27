@@ -2,8 +2,6 @@ package com.example.mipanini2026.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -12,10 +10,9 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.mipanini2026.R;
-
-import android.content.Intent;
-
-import com.example.mipanini2026.database.DatabaseHelper;
+import com.example.mipanini2026.room.DatabaseExecutor;
+import com.example.mipanini2026.room.database.PaniniDatabase;
+import com.example.mipanini2026.room.entity.UsuarioEntity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class UsuarioActivity extends AppCompatActivity {
@@ -25,63 +22,43 @@ public class UsuarioActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usuario);
 
-        TextView txtNombre =
-                findViewById(R.id.txtNombre);
+        TextView txtNombre = findViewById(R.id.txtNombre);
+        TextView txtUsuario = findViewById(R.id.txtUsuario);
+        TextView txtEmail = findViewById(R.id.txtEmail);
 
-        TextView txtUsuario =
-                findViewById(R.id.txtUsuario);
+        TextView txtConseguidas = findViewById(R.id.txtConseguidas);
+        TextView txtFaltantes = findViewById(R.id.txtFaltantes);
+        TextView txtPorcentaje = findViewById(R.id.txtPorcentaje);
+        TextView txtMotivacion = findViewById(R.id.txtMotivacion);
 
-        TextView txtEmail =
-                findViewById(R.id.txtEmail);
+        ProgressBar progreso = findViewById(R.id.progresoAlbum);
 
-        TextView txtConseguidas =
-                findViewById(R.id.txtConseguidas);
+        Button btnCerrarSesion = findViewById(R.id.btnCerrarSesion);
 
-        TextView txtFaltantes =
-                findViewById(R.id.txtFaltantes);
-
-        TextView txtPorcentaje =
-                findViewById(R.id.txtPorcentaje);
-
-        TextView txtMotivacion =
-                findViewById(R.id.txtMotivacion);
-
-        ProgressBar progreso =
-                findViewById(R.id.progresoAlbum);
-
-        Button btnCerrarSesion =
-                findViewById(R.id.btnCerrarSesion);
-
-        SharedPreferences prefs =
-                getSharedPreferences("panini", MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("panini", MODE_PRIVATE);
 
         String emailLogueado = prefs.getString("email_logueado", "");
 
-        String nombre = "Usuario";
-        String usuario = "usuario";
-        String email = emailLogueado;
+        txtNombre.setText("Usuario");
+        txtUsuario.setText("@usuario");
+        txtEmail.setText(emailLogueado);
 
-        DatabaseHelper helper = new DatabaseHelper(this);
-        SQLiteDatabase db = helper.getReadableDatabase();
+        DatabaseExecutor.getExecutor().execute(() -> {
 
-        Cursor cursor = db.rawQuery(
-                "SELECT nombre, usuario, email FROM usuarios WHERE email = ?",
-                new String[]{emailLogueado}
-        );
+            UsuarioEntity usuario = PaniniDatabase
+                    .getInstancia(getApplicationContext())
+                    .usuarioDao()
+                    .buscarPorEmail(emailLogueado);
 
-        if (cursor.moveToFirst()) {
-            nombre = cursor.getString(0);
-            usuario = cursor.getString(1);
-            email = cursor.getString(2);
-        }
+            runOnUiThread(() -> {
 
-        cursor.close();
-        db.close();
-
-        txtNombre.setText(nombre);
-        txtUsuario.setText("@" + usuario);
-        txtEmail.setText(email);
-
+                if (usuario != null) {
+                    txtNombre.setText(usuario.getNombre());
+                    txtUsuario.setText("@" + usuario.getUsuario());
+                    txtEmail.setText(usuario.getEmail());
+                }
+            });
+        });
 
         int conseguidas = 0;
 
@@ -246,8 +223,8 @@ public class UsuarioActivity extends AppCompatActivity {
             finish();
 
         });
-        BottomNavigationView nav =
-                findViewById(R.id.bottomNavigation);
+
+        BottomNavigationView nav = findViewById(R.id.bottomNavigation);
 
         nav.setSelectedItemId(R.id.nav_usuario);
 

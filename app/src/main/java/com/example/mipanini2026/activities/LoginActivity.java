@@ -13,6 +13,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.mipanini2026.R;
+import com.example.mipanini2026.room.DatabaseExecutor;
+import com.example.mipanini2026.room.entity.UsuarioEntity;
 import com.example.mipanini2026.services.AuthService;
 
 public class LoginActivity extends AppCompatActivity {
@@ -69,29 +71,42 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        if (authService.iniciarSesion(email, password)) {
+        btnLogin.setEnabled(false);
 
-            SharedPreferences prefs = getSharedPreferences("panini", MODE_PRIVATE);
+        DatabaseExecutor.getExecutor().execute(() -> {
 
-            prefs.edit()
-                    .putString("email_logueado", email)
-                    .apply();
+            UsuarioEntity usuario = authService.iniciarSesion(email, password);
 
-            Intent intent = new Intent(
-                    LoginActivity.this,
-                    MainActivity.class
-            );
+            runOnUiThread(() -> {
 
-            startActivity(intent);
+                btnLogin.setEnabled(true);
 
-        } else {
+                if (usuario != null) {
 
-            Toast.makeText(
-                    this,
-                    "Email o contraseña incorrectos",
-                    Toast.LENGTH_SHORT
-            ).show();
-        }
+                    SharedPreferences prefs = getSharedPreferences("panini", MODE_PRIVATE);
+
+                    prefs.edit()
+                            .putString("email_logueado", email)
+                            .apply();
+
+                    Intent intent = new Intent(
+                            LoginActivity.this,
+                            MainActivity.class
+                    );
+
+                    startActivity(intent);
+                    finish();
+
+                } else {
+
+                    Toast.makeText(
+                            LoginActivity.this,
+                            "Email o contraseña incorrectos",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            });
+        });
     }
 }
 

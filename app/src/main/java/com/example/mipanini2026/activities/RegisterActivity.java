@@ -10,10 +10,12 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.mipanini2026.R;
-import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteConstraintException;
 
-import com.example.mipanini2026.database.DatabaseHelper;
+import com.example.mipanini2026.room.DatabaseExecutor;
+import com.example.mipanini2026.room.database.PaniniDatabase;
+import com.example.mipanini2026.room.entity.UsuarioEntity;
+
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -91,34 +93,50 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        DatabaseHelper helper = new DatabaseHelper(this);
-        SQLiteDatabase db = helper.getWritableDatabase();
+        UsuarioEntity nuevoUsuario = new UsuarioEntity(
+                nombre,
+                usuario,
+                email,
+                password
+        );
 
-        ContentValues values = new ContentValues();
+        DatabaseExecutor.getExecutor().execute(() -> {
 
-        values.put("nombre", nombre);
-        values.put("usuario", usuario);
-        values.put("email", email);
-        values.put("password", password);
+            try {
 
-        long resultado = db.insert("usuarios", null, values);
+                PaniniDatabase database =
+                        PaniniDatabase.getInstancia(getApplicationContext());
 
-        db.close();
+                database.usuarioDao().insertar(nuevoUsuario);
 
-        if(resultado == -1){
-            Toast.makeText(
-                    this,
-                    "El email ya está registrado",
-                    Toast.LENGTH_SHORT
-            ).show();
-            return;
-        }
+                runOnUiThread(() -> {
 
-        Toast.makeText(
-                this,
-                "Cuenta creada correctamente",
-                Toast.LENGTH_SHORT
-        ).show();
+                    Toast.makeText(
+                            RegisterActivity.this,
+                            "Cuenta creada correctamente",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    finish();
+                });
+
+            } catch (SQLiteConstraintException exception) {
+
+                runOnUiThread(() -> Toast.makeText(
+                        RegisterActivity.this,
+                        "El email o usuario ya está registrado",
+                        Toast.LENGTH_SHORT
+                ).show());
+
+            } catch (Exception exception) {
+
+                runOnUiThread(() -> Toast.makeText(
+                        RegisterActivity.this,
+                        "No se pudo crear la cuenta",
+                        Toast.LENGTH_SHORT
+                ).show());
+            }
+        });
 
         finish();
     }

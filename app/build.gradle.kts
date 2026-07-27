@@ -45,4 +45,9 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     implementation("com.google.android.material:material:1.12.0")
+
+    val roomVersion = "2.8.4"
+
+    implementation("androidx.room:room-runtime:$roomVersion")
+    annotationProcessor("androidx.room:room-compiler:$roomVersion")
 }
